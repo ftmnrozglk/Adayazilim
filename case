@@ -1,41 +1,112 @@
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
-
-@app.route('/rezervasyon', methods=['POST'])
-def rezervasyon_yap():
-    data = request.get_json()
-
-    tren = data.get("Tren")
-    rezervasyon_kisi_sayisi = data.get("RezervasyonYapilacakKisiSayisi")
-    kisiler_farkli_vagonlara_yerlestirilebilir = data.get("KisilerFarkliVagonlaraYerlestirilebilir")
-
-    vagonlar = tren.get("Vagonlar")
-
+def rezervasyon_yapilabilir_mi(tren_bilgileri, kisi_sayisi, farkli_vagonlara_yerlestirilebilir):
+    vagonlar = tren_bilgileri['Vagonlar']
+    rezervasyon_yapilabilir = False
     yerlesim_ayrinti = []
 
-    # Rezervasyon yapılabilirlik kontrolü
-    rezervasyon_yapilabilir = False
-
-    # Burada gerekli algoritmayı uygulayarak rezervasyon yapılabilirliğini ve yerleşim detaylarını kontrol edin.
-
-    # Örnek olarak yerleşim ayrinti listesine eklemek için dummy veriler
-    if rezervasyon_kisi_sayisi <= sum(vagon.get("Kapasite") - vagon.get("DoluKoltukAdet") for vagon in vagonlar):
-        # Basit bir yerleşim örneği için her vagona bir kişi yerleştirelim
+    if farkli_vagonlara_yerlestirilebilir:
+        kalan_kisiler = kisi_sayisi
         for vagon in vagonlar:
-            kalan_kapasite = vagon.get("Kapasite") - vagon.get("DoluKoltukAdet")
-            if kalan_kapasite >= rezervasyon_kisi_sayisi:
-                yerlesim_ayrinti.append({"VagonAdi": vagon.get("Ad"), "KisiSayisi": rezervasyon_kisi_sayisi})
+            bos_koltuk = vagon['Kapasite'] - vagon['DoluKoltukAdet']
+            if bos_koltuk >= kalan_kisiler:
+                yerlesim_ayrinti.append({'VagonAdi': vagon['Ad'], 'KisiSayisi': kalan_kisiler})
                 rezervasyon_yapilabilir = True
                 break
+            else:
+                if bos_koltuk > 0:
+                    yerlesim_ayrinti.append({'VagonAdi': vagon['Ad'], 'KisiSayisi': bos_koltuk})
+                    kalan_kisiler -= bos_koltuk
+    else:
+        toplam_bos_koltuk = sum(vagon['Kapasite'] - vagon['DoluKoltukAdet'] for vagon in vagonlar)
+        if toplam_bos_koltuk >= kisi_sayisi:
+            rezervasyon_yapilabilir = True
+            kalan_kisiler = kisi_sayisi
+            for vagon in vagonlar:
+                bos_koltuk = vagon['Kapasite'] - vagon['DoluKoltukAdet']
+                if bos_koltuk >= kalan_kisiler:
+                    yerlesim_ayrinti.append({'VagonAdi': vagon['Ad'], 'KisiSayisi': kalan_kisiler})
+                    break
+                else:
+                    if bos_koltuk > 0:
+                        yerlesim_ayrinti.append({'VagonAdi': vagon['Ad'], 'KisiSayisi': bos_koltuk})
+                        kalan_kisiler -= bos_koltuk
 
-    return jsonify({
-        "RezervasyonYapilabilir": rezervasyon_yapilabilir,
-        "YerlesimAyrinti": yerlesim_ayrinti
-    })
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    return {'RezervasyonYapilabilir': rezervasyon_yapilabilir, 'YerlesimAyrinti': yerlesim_ayrinti}
 
 
-Bu kod parçacığı, Flask kullanarak /rezervasyon endpoint'ine POST isteği alacak ve gelen isteği değerlendirerek rezervasyon yapılabilirliğini ve yerleşim detaylarını kontrol edecek basit bir örnek içerir. Gerçek senaryoda, yerleşim algoritması ve doluluk kontrolü daha karmaşık olabilir.
+# Örnek istek ve cevap
+istek = {
+    "Tren": {
+        "Ad": "Başkent Ekspres",
+        "Vagonlar": [
+            {"Ad": "Vagon 1", "Kapasite": 100, "DoluKoltukAdet": 68},
+            {"Ad": "Vagon 2", "Kapasite": 90, "DoluKoltukAdet": 50},
+            {"Ad": "Vagon 3", "Kapasite": 80, "DoluKoltukAdet": 80}
+        ]
+    },
+    "RezervasyonYapilacakKisiSayisi": 3,
+    "KisilerFarkliVagonlaraYerlestirilebilir": True
+}
+
+cevap = rezervasyon_yapilabilir_mi(istek['Tren'], istek['RezervasyonYapilacakKisiSayisi'], istek['KisilerFarkliVagonlaraYerlestirilebilir'])
+print(cevap)
+
+
+Elbette, bu talebi Python programlama dili kullanarak çözebilirim. Bu senaryoyu ele alacak bir örnek geliştirebilirim.
+
+İşte örnek bir Python kodu:
+
+python
+Copy code
+def rezervasyon_yapilabilir_mi(tren_bilgileri, kisi_sayisi, farkli_vagonlara_yerlestirilebilir):
+    vagonlar = tren_bilgileri['Vagonlar']
+    rezervasyon_yapilabilir = False
+    yerlesim_ayrinti = []
+
+    if farkli_vagonlara_yerlestirilebilir:
+        kalan_kisiler = kisi_sayisi
+        for vagon in vagonlar:
+            bos_koltuk = vagon['Kapasite'] - vagon['DoluKoltukAdet']
+            if bos_koltuk >= kalan_kisiler:
+                yerlesim_ayrinti.append({'VagonAdi': vagon['Ad'], 'KisiSayisi': kalan_kisiler})
+                rezervasyon_yapilabilir = True
+                break
+            else:
+                if bos_koltuk > 0:
+                    yerlesim_ayrinti.append({'VagonAdi': vagon['Ad'], 'KisiSayisi': bos_koltuk})
+                    kalan_kisiler -= bos_koltuk
+    else:
+        toplam_bos_koltuk = sum(vagon['Kapasite'] - vagon['DoluKoltukAdet'] for vagon in vagonlar)
+        if toplam_bos_koltuk >= kisi_sayisi:
+            rezervasyon_yapilabilir = True
+            kalan_kisiler = kisi_sayisi
+            for vagon in vagonlar:
+                bos_koltuk = vagon['Kapasite'] - vagon['DoluKoltukAdet']
+                if bos_koltuk >= kalan_kisiler:
+                    yerlesim_ayrinti.append({'VagonAdi': vagon['Ad'], 'KisiSayisi': kalan_kisiler})
+                    break
+                else:
+                    if bos_koltuk > 0:
+                        yerlesim_ayrinti.append({'VagonAdi': vagon['Ad'], 'KisiSayisi': bos_koltuk})
+                        kalan_kisiler -= bos_koltuk
+
+    return {'RezervasyonYapilabilir': rezervasyon_yapilabilir, 'YerlesimAyrinti': yerlesim_ayrinti}
+
+
+# Örnek istek ve cevap
+istek = {
+    "Tren": {
+        "Ad": "Başkent Ekspres",
+        "Vagonlar": [
+            {"Ad": "Vagon 1", "Kapasite": 100, "DoluKoltukAdet": 68},
+            {"Ad": "Vagon 2", "Kapasite": 90, "DoluKoltukAdet": 50},
+            {"Ad": "Vagon 3", "Kapasite": 80, "DoluKoltukAdet": 80}
+        ]
+    },
+    "RezervasyonYapilacakKisiSayisi": 3,
+    "KisilerFarkliVagonlaraYerlestirilebilir": True
+}
+
+cevap = rezervasyon_yapilabilir_mi(istek['Tren'], istek['RezervasyonYapilacakKisiSayisi'], istek['KisilerFarkliVagonlaraYerlestirilebilir'])
+print(cevap)
+Bu kod, verilen tren bilgilerine, rezervasyon yapılacak kişi sayısına ve farklı vagonlara yerleştirilebilirlik durumuna göre rezervasyonun yapılıp yapılamayacağını kontrol eder ve uygun vagonlara yerleşim ayrıntılarını sağlar.
+
