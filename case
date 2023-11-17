@@ -1,0 +1,41 @@
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route('/rezervasyon', methods=['POST'])
+def rezervasyon_yap():
+    data = request.get_json()
+
+    tren = data.get("Tren")
+    rezervasyon_kisi_sayisi = data.get("RezervasyonYapilacakKisiSayisi")
+    kisiler_farkli_vagonlara_yerlestirilebilir = data.get("KisilerFarkliVagonlaraYerlestirilebilir")
+
+    vagonlar = tren.get("Vagonlar")
+
+    yerlesim_ayrinti = []
+
+    # Rezervasyon yapılabilirlik kontrolü
+    rezervasyon_yapilabilir = False
+
+    # Burada gerekli algoritmayı uygulayarak rezervasyon yapılabilirliğini ve yerleşim detaylarını kontrol edin.
+
+    # Örnek olarak yerleşim ayrinti listesine eklemek için dummy veriler
+    if rezervasyon_kisi_sayisi <= sum(vagon.get("Kapasite") - vagon.get("DoluKoltukAdet") for vagon in vagonlar):
+        # Basit bir yerleşim örneği için her vagona bir kişi yerleştirelim
+        for vagon in vagonlar:
+            kalan_kapasite = vagon.get("Kapasite") - vagon.get("DoluKoltukAdet")
+            if kalan_kapasite >= rezervasyon_kisi_sayisi:
+                yerlesim_ayrinti.append({"VagonAdi": vagon.get("Ad"), "KisiSayisi": rezervasyon_kisi_sayisi})
+                rezervasyon_yapilabilir = True
+                break
+
+    return jsonify({
+        "RezervasyonYapilabilir": rezervasyon_yapilabilir,
+        "YerlesimAyrinti": yerlesim_ayrinti
+    })
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+Bu kod parçacığı, Flask kullanarak /rezervasyon endpoint'ine POST isteği alacak ve gelen isteği değerlendirerek rezervasyon yapılabilirliğini ve yerleşim detaylarını kontrol edecek basit bir örnek içerir. Gerçek senaryoda, yerleşim algoritması ve doluluk kontrolü daha karmaşık olabilir.
